@@ -1,8 +1,7 @@
-import { Hashtag, HashtagGroup, Platform, PlatformTab, QualityScore, TagCategory } from "@/types";
+import { Hashtag, HashtagGroup, HashtagLanguage, Platform, PlatformTab, QualityScore, TagCategory } from "@/types";
 import {
   findNiche,
   getTagsByNiche,
-  getExpansionsByNiche,
   genericHighVolumeTags,
   platformSpecificTags,
   semanticExpansions,
@@ -13,6 +12,16 @@ const platformTabs: PlatformTab[] = [
   { id: "tiktok", label: "TikTok", maxTags: 20 },
   { id: "instagram", label: "Instagram", maxTags: 30 },
 ];
+
+// Tag language inference based on content
+function inferTagLanguage(tag: string): HashtagLanguage {
+  const lower = tag.toLowerCase();
+  // Indonesian common words
+  const idIndicators = ["investasi", "saham", "bisnis", "makanan", "kuliner", "kesehatan", "olahraga", "pendidikan", "fotografi", "kecantikan", "motivasi", "islam", "doa", "hijrah", "belajar", "tips", "indonesia", "rumah", "sehat", "cinta", "komunitas"];
+  if (idIndicators.some(w => lower.includes(w))) return "id";
+  // English is default for most hashtags
+  return "en";
+}
 
 function shuffleArray<T>(array: T[]): T[] {
   const shuffled = [...array];
@@ -26,39 +35,32 @@ function shuffleArray<T>(array: T[]): T[] {
 function calculateQualityScore(tag: { volume: string; platform: Platform[] }, platform: Platform): QualityScore {
   let score = 0;
 
-  // Base score from volume
   if (tag.volume === "high") score += 3;
   else if (tag.volume === "medium") score += 2;
   else score += 1;
 
-  // Platform match bonus
   if (tag.platform.includes(platform) || tag.platform.includes("all")) {
     score += 2;
   }
 
-  // Normalize to 1-5
   return Math.min(5, Math.max(1, score)) as QualityScore;
 }
 
 function classifyTag(tag: { volume: string; tag: string }, niche: string): TagCategory {
   const tagLower = tag.tag.toLowerCase();
 
-  // Long-tail: specific, longer hashtags
   if (tagLower.length > 18 || tagLower.includes("for") || tagLower.includes("tips") || tagLower.includes("guide")) {
     return "long-tail";
   }
 
-  // Viral: high volume, generic
   if (tag.volume === "high" && tagLower.length < 10) {
     return "viral";
   }
 
-  // Niche: medium volume, specific to niche
   if (tag.volume === "low" || (tag.volume === "medium" && tagLower.length > 10)) {
     return "niche";
   }
 
-  // Balanced: medium-high volume, moderate length
   return "balanced";
 }
 
@@ -70,7 +72,6 @@ function getSemanticExpansions(keyword: string): string[] {
     if (lower.includes(word)) {
       expansions.push(...related);
     }
-    // Also check if any related word matches
     for (const rel of related) {
       if (lower.includes(rel)) {
         expansions.push(word);
@@ -111,12 +112,13 @@ function filterTagsByPlatform(
   keyword: string
 ): Hashtag[] {
   const processed: Hashtag[] = tags
-    .filter((t) => t.platform.includes(platform) || t.platform.includes("all") || t.platform.includes("instagram")) // fallback
+    .filter((t) => t.platform.includes(platform) || t.platform.includes("all") || t.platform.includes("instagram"))
     .map((t) => ({
       ...t,
       score: calculateQualityScore(t, platform),
       category: classifyTag(t, keyword),
       competition: t.volume === "high" ? "high" : t.volume === "medium" ? "medium" : "low",
+      language: t.language || inferTagLanguage(t.tag),
     }));
 
   return processed;
@@ -129,7 +131,6 @@ function pickTopTags(
 ): Hashtag[] {
   const filtered = tags.filter((t) => t.category === category);
 
-  // Sort by score descending, then shuffle slightly for variety
   const sorted = filtered.sort((a, b) => {
     if (b.score !== a.score) return b.score - a.score;
     return Math.random() - 0.5;
@@ -141,12 +142,12 @@ function pickTopTags(
 export function generateHashtags(
   keyword: string,
   platforms: Platform[],
-  title?: string
+  title?: string,
+  language?: HashtagLanguage | "all"
 ): { platform: Platform; groups: HashtagGroup[]; aiNote: string }[] {
   const searchTerm = `${keyword} ${title || ""}`.trim();
   const niche = findNiche(searchTerm);
 
-  // Get base tags
   let nicheTags: Omit<Hashtag, "score" | "category" | "competition">[] = [];
   const expansions = getSemanticExpansions(keyword);
 
@@ -154,7 +155,6 @@ export function generateHashtags(
     nicheTags = getTagsByNiche(niche);
   }
 
-  // If no niche found, use generic tags
   if (nicheTags.length === 0) {
     nicheTags = genericHighVolumeTags;
   }
@@ -168,7 +168,6 @@ export function generateHashtags(
     const specificTags = platformSpecificTags[platformStr] || [];
     const allTags = [...nicheTags, ...genericHighVolumeTags, ...specificTags];
 
-    // Add semantic expansion tags
     for (const exp of expansions) {
       const expTag = allTags.find(
         (t) => t.tag.toLowerCase() === exp.toLowerCase()
@@ -182,25 +181,29 @@ export function generateHashtags(
       }
     }
 
-    // Remove duplicates
     const uniqueTags = Array.from(
       new Map(allTags.map((t) => [t.tag, t])).values()
     );
 
-    const processedTags = filterTagsByPlatform(uniqueTags, platformStr, keyword);
+    let processedTags = filterTagsByPlatform(uniqueTags, platformStr, keyword);
 
-    // Shuffle for variety
+    // Filter by language if specified
+    if (language && language !== "all") {
+      processedTags = processedTags.filter((t) => {
+        const tagLang = t.language || inferTagLanguage(t.tag);
+        return tagLang === language;
+      });
+    }
+
     const shuffled = shuffleArray(processedTags);
 
-    // Get max tags for platform
     const tabInfo = platformTabs.find((t) => t.id === platformStr);
     const maxTags = tabInfo?.maxTags || 15;
 
-    // Distribute tags across categories
-    const viralCount = Math.ceil(maxTags * 0.25); // 25% viral
-    const balancedCount = Math.ceil(maxTags * 0.35); // 35% balanced
-    const nicheCount = Math.ceil(maxTags * 0.25); // 25% niche
-    const longTailCount = maxTags - viralCount - balancedCount - nicheCount; // rest long-tail
+    const viralCount = Math.ceil(maxTags * 0.25);
+    const balancedCount = Math.ceil(maxTags * 0.35);
+    const nicheCount = Math.ceil(maxTags * 0.25);
+    const longTailCount = maxTags - viralCount - balancedCount - nicheCount;
 
     const viralTags = pickTopTags(shuffled, "viral", viralCount);
     const balancedTags = pickTopTags(shuffled, "balanced", balancedCount);
@@ -234,7 +237,6 @@ export function generateHashtags(
       },
     ];
 
-    // Remove empty groups
     const nonEmptyGroups = groups.filter((g) => g.hashtags.length > 0);
 
     return {

@@ -1,28 +1,29 @@
 "use client";
 
 import { useState } from "react";
-import { Platform } from "@/types";
+import { Platform, HashtagLanguage, languageOptions } from "@/types";
+import { YoutubeIcon, TiktokIcon, InstagramIcon, GlobeIcon } from "./PlatformIcons";
 
 interface SearchCardProps {
-  onGenerate: (keyword: string, platforms: Platform[], title: string) => void;
+  onGenerate: (keyword: string, platforms: Platform[], title: string, language: HashtagLanguage | "all") => void;
   isLoading: boolean;
 }
 
-const platformOptions: { id: Platform; label: string; emoji: string }[] = [
-  { id: "youtube", label: "YouTube", emoji: "▶️" },
-  { id: "tiktok", label: "TikTok", emoji: "🎵" },
-  { id: "instagram", label: "Instagram", emoji: "📸" },
-  { id: "all", label: "Semua Platform", emoji: "🌐" },
+const platformOptions: { id: Platform; label: string; icon: React.ReactNode }[] = [
+  { id: "youtube", label: "YouTube", icon: <YoutubeIcon className="h-4 w-4" /> },
+  { id: "tiktok", label: "TikTok", icon: <TiktokIcon className="h-4 w-4" /> },
+  { id: "instagram", label: "Instagram", icon: <InstagramIcon className="h-4 w-4" /> },
+  { id: "all", label: "Semua Platform", icon: <GlobeIcon className="h-4 w-4" /> },
 ];
 
 export default function SearchCard({ onGenerate, isLoading }: SearchCardProps) {
   const [keyword, setKeyword] = useState("");
   const [title, setTitle] = useState("");
   const [selectedPlatforms, setSelectedPlatforms] = useState<Platform[]>([]);
+  const [selectedLanguage, setSelectedLanguage] = useState<HashtagLanguage | "all">("all");
 
   const togglePlatform = (platform: Platform) => {
     if (platform === "all") {
-      // If "All" is selected, clear others; if deselected, clear all
       if (selectedPlatforms.includes("all")) {
         setSelectedPlatforms([]);
       } else {
@@ -31,7 +32,6 @@ export default function SearchCard({ onGenerate, isLoading }: SearchCardProps) {
       return;
     }
 
-    // Remove "all" if it was selected
     let newSelection = selectedPlatforms.filter((p) => p !== "all");
 
     if (newSelection.includes(platform)) {
@@ -47,7 +47,7 @@ export default function SearchCard({ onGenerate, isLoading }: SearchCardProps) {
     e.preventDefault();
     if (!keyword.trim()) return;
     if (selectedPlatforms.length === 0) return;
-    onGenerate(keyword.trim(), selectedPlatforms, title.trim());
+    onGenerate(keyword.trim(), selectedPlatforms, title.trim(), selectedLanguage);
   };
 
   const isValid = keyword.trim().length > 0 && selectedPlatforms.length > 0;
@@ -95,37 +95,68 @@ export default function SearchCard({ onGenerate, isLoading }: SearchCardProps) {
         />
       </div>
 
-      {/* Platform Selector */}
-      <div className="mb-6">
-        <label className="mb-2 block text-sm font-medium text-text dark:text-white">
-          Pilih Platform
-        </label>
-        <div className="flex flex-wrap gap-2">
-          {platformOptions.map((platform) => {
-            const isSelected = selectedPlatforms.includes(platform.id);
-            return (
-              <button
-                key={platform.id}
-                type="button"
-                onClick={() => togglePlatform(platform.id)}
-                disabled={isLoading}
-                className={`inline-flex items-center gap-1.5 rounded-lg border px-3.5 py-2 text-xs font-medium transition-all ${
-                  isSelected
-                    ? "border-primary bg-primary/10 text-primary dark:bg-primary/20"
-                    : "border-gray-300 bg-white text-gray-600 hover:border-gray-400 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
-                } ${isLoading ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
-              >
-                <span>{platform.emoji}</span>
-                {platform.label}
-              </button>
-            );
-          })}
+      {/* Two columns: Platform + Language */}
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {/* Platform Selector */}
+        <div>
+          <label className="mb-2 block text-sm font-medium text-text dark:text-white">
+            Pilih Platform
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {platformOptions.map((platform) => {
+              const isSelected = selectedPlatforms.includes(platform.id);
+              return (
+                <button
+                  key={platform.id}
+                  type="button"
+                  onClick={() => togglePlatform(platform.id)}
+                  disabled={isLoading}
+                  className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-all ${
+                    isSelected
+                      ? "border-primary bg-primary/10 text-primary dark:bg-primary/20"
+                      : "border-gray-300 bg-white text-gray-600 hover:border-gray-400 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
+                  } ${isLoading ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
+                >
+                  {platform.icon}
+                  {platform.label}
+                </button>
+              );
+            })}
+          </div>
+          {selectedPlatforms.length === 0 && (
+            <p className="mt-1.5 text-xs text-red-500">
+              Pilih minimal satu platform
+            </p>
+          )}
         </div>
-        {selectedPlatforms.length === 0 && (
-          <p className="mt-1.5 text-xs text-red-500">
-            Pilih minimal satu platform
-          </p>
-        )}
+
+        {/* Language Selector */}
+        <div>
+          <label className="mb-2 block text-sm font-medium text-text dark:text-white">
+            Bahasa Hashtag
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {languageOptions.map((lang) => {
+              const isSelected = selectedLanguage === lang.id;
+              return (
+                <button
+                  key={lang.id}
+                  type="button"
+                  onClick={() => setSelectedLanguage(lang.id)}
+                  disabled={isLoading}
+                  className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-all ${
+                    isSelected
+                      ? "border-secondary bg-secondary/10 text-secondary dark:bg-secondary/20"
+                      : "border-gray-300 bg-white text-gray-600 hover:border-gray-400 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
+                  } ${isLoading ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
+                >
+                  {lang.label === "English" ? "🇬🇧" : lang.label === "Bahasa Indonesia" ? "🇮🇩" : lang.label === "Bahasa Lainnya" ? "🌍" : "🌐"}
+                  <span>{lang.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {/* Generate Button */}

@@ -6,6 +6,8 @@ export type TagCategory = "viral" | "balanced" | "niche" | "long-tail";
 
 export type QualityScore = 1 | 2 | 3 | 4 | 5;
 
+export type HashtagLanguage = "id" | "en" | "other";
+
 export interface Hashtag {
   tag: string;
   score: QualityScore;
@@ -13,6 +15,7 @@ export interface Hashtag {
   competition: CompetitionLevel;
   platform: Platform[];
   volume: "high" | "medium" | "low";
+  language?: HashtagLanguage;
 }
 
 export interface HashtagGroup {
@@ -26,6 +29,7 @@ export interface GenerateRequest {
   keyword: string;
   platform: Platform[];
   title?: string;
+  language?: HashtagLanguage;
 }
 
 export interface GenerateResponse {
@@ -39,3 +43,10 @@ export interface PlatformTab {
   label: string;
   maxTags: number;
 }
+
+export const languageOptions = [
+  { id: "all" as const, label: "Semua Bahasa" },
+  { id: "id" as const, label: "Bahasa Indonesia" },
+  { id: "en" as const, label: "English" },
+  { id: "other" as const, label: "Bahasa Lainnya" },
+];

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { HashtagGroup, Platform } from "@/types";
+import { YoutubeIcon, TiktokIcon, InstagramIcon } from "./PlatformIcons";
 import HashtagGroupComponent from "./HashtagGroup";
 import CopyButtons from "./CopyButtons";
 import { exportToTxt } from "@/lib/hashtag-engine";
@@ -40,10 +41,10 @@ export default function ResultSection({ results, keyword, onCopyTag }: ResultSec
     URL.revokeObjectURL(url);
   };
 
-  const tabIcons: Record<string, string> = {
-    youtube: "▶️",
-    tiktok: "🎵",
-    instagram: "📸",
+  const tabIcons: Record<string, React.ReactNode> = {
+    youtube: <YoutubeIcon className="h-4 w-4" />,
+    tiktok: <TiktokIcon className="h-4 w-4" />,
+    instagram: <InstagramIcon className="h-4 w-4" />,
   };
 
   return (

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateHashtags } from "@/lib/hashtag-engine";
-import { Platform } from "@/types";
+import { Platform, HashtagLanguage } from "@/types";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { keyword, platforms, title } = body;
+    const { keyword, platforms, title, language } = body;
 
     if (!keyword || !keyword.trim()) {
       return NextResponse.json(
@@ -32,6 +32,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const validLanguage =
+      language && ["id", "en", "other", "all"].includes(language)
+        ? language
+        : "all";
+
     // Simulate processing time for realistic UX (500ms-1.5s)
     const delay = Math.floor(Math.random() * 1000) + 500;
     await new Promise((resolve) => setTimeout(resolve, delay));
@@ -39,7 +44,8 @@ export async function POST(request: NextRequest) {
     const results = generateHashtags(
       keyword.trim(),
       validPlatforms as Platform[],
-      title?.trim()
+      title?.trim(),
+      validLanguage as HashtagLanguage | "all"
     );
 
     return NextResponse.json({

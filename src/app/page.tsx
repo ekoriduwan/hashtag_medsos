@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Platform, HashtagGroup } from "@/types";
+import { Platform, HashtagGroup, HashtagLanguage } from "@/types";
 import SearchCard from "@/components/SearchCard";
 import ResultSection from "@/components/ResultSection";
+import ThemeToggle from "@/components/ThemeToggle";
 
 interface Result {
   platform: Platform;
@@ -25,7 +26,7 @@ export default function Home() {
   const [keyword, setKeyword] = useState("");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  const handleGenerate = async (kw: string, platforms: Platform[], title: string) => {
+  const handleGenerate = async (kw: string, platforms: Platform[], title: string, language: HashtagLanguage | "all") => {
     setIsLoading(true);
     setError(null);
     setKeyword(kw);
@@ -34,7 +35,12 @@ export default function Home() {
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ keyword: kw, platforms, title: title || undefined }),
+        body: JSON.stringify({
+          keyword: kw,
+          platforms,
+          title: title || undefined,
+          language: language !== "all" ? language : undefined,
+        }),
       });
 
       const data: ApiResponse = await response.json();
@@ -56,7 +62,6 @@ export default function Home() {
       await navigator.clipboard.writeText(`#${tag}`);
       showToast(`#${tag} copied!`);
     } catch {
-      // Fallback
       showToast(`#${tag} copied!`);
     }
   };
@@ -79,6 +84,7 @@ export default function Home() {
               Hashtag Finder <span className="text-primary">Pro</span>
             </span>
           </div>
+          <ThemeToggle />
         </div>
       </header>
 
@@ -115,7 +121,6 @@ export default function Home() {
         {isLoading && (
           <section className="px-4 pb-16 sm:px-6">
             <div className="mx-auto max-w-4xl space-y-4">
-              {/* Skeleton Tabs */}
               <div className="flex gap-1 rounded-xl bg-gray-100 p-1 dark:bg-gray-800">
                 {[1, 2, 3].map((i) => (
                   <div
@@ -125,7 +130,6 @@ export default function Home() {
                 ))}
               </div>
 
-              {/* Skeleton Groups */}
               {[1, 2, 3, 4].map((i) => (
                 <div
                   key={i}
