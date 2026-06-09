@@ -51,6 +51,7 @@ export default function HashtagCard({ hashtag, onCopy }: HashtagCardProps) {
       </div>
       <button
         onClick={handleCopy}
+        aria-label={`Copy hashtag #${hashtag.tag}`}
         className={`flex-shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
           copied
             ? "bg-success text-white"

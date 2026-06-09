@@ -45,6 +45,7 @@ export default function HashtagGroup({ group, onCopyTag, onCopyGroup }: HashtagG
           </div>
           <button
             onClick={() => onCopyGroup(group.hashtags.map((h) => h.tag))}
+            aria-label={`Copy all ${group.title} hashtags`}
             className="rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-primary shadow-sm transition-all hover:bg-primary hover:text-white dark:bg-gray-800 dark:hover:bg-primary"
           >
             Copy All

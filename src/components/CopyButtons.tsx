@@ -37,6 +37,7 @@ export default function CopyButtons({ groups, onExportTxt }: CopyButtonsProps) {
           <button
             key={btn.type}
             onClick={() => handleCopy(btn.type)}
+            aria-label={`Copy ${btn.label} hashtags`}
             className={`rounded-lg px-4 py-2 text-xs font-medium text-white shadow-sm transition-all active:scale-95 ${
               isCopied ? "bg-success" : btn.color
             }`}
@@ -47,6 +48,7 @@ export default function CopyButtons({ groups, onExportTxt }: CopyButtonsProps) {
       })}
       <button
         onClick={onExportTxt}
+        aria-label="Export hashtags to TXT file"
         className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-xs font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-100 active:scale-95 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
       >
         Export TXT
