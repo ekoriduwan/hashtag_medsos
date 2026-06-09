@@ -32,28 +32,46 @@ function shuffleArray<T>(array: T[]): T[] {
   return shuffled;
 }
 
-function calculateQualityScore(tag: { volume: string; platform: Platform[] }, platform: Platform): QualityScore {
+function calculateQualityScore(tag: { volume: string; platform: Platform[]; trend7?: number; trend30?: number; tag?: string }, platform: Platform, keyword?: string): QualityScore {
   let score = 0;
 
-  if (tag.volume === "high") score += 3;
+  // Volume-based base score
+  if (tag.volume === "very-high") score += 4;
+  else if (tag.volume === "high") score += 3;
   else if (tag.volume === "medium") score += 2;
   else score += 1;
 
+  // Platform match bonus
   if (tag.platform.includes(platform) || tag.platform.includes("all")) {
     score += 2;
+  }
+
+  // Trend boost: trending hashtags get +1
+  if (tag.trend7 && tag.trend7 > 85) score += 1;
+  if (tag.trend30 && tag.trend30 > 90) score += 1;
+
+  // Relevancy boost: if tag contains keyword words, extra point
+  if (keyword && tag.tag) {
+    const keywordWords = keyword.toLowerCase().split(/\s+/);
+    const tagLower = tag.tag.toLowerCase();
+    if (keywordWords.some(w => tagLower.includes(w) || w.includes(tagLower))) {
+      score += 1;
+    }
   }
 
   return Math.min(5, Math.max(1, score)) as QualityScore;
 }
 
-function classifyTag(tag: { volume: string; tag: string }, niche: string): TagCategory {
+function classifyTag(tag: { volume: string; tag: string; trend7?: number }, niche: string): TagCategory {
   const tagLower = tag.tag.toLowerCase();
 
   if (tagLower.length > 18 || tagLower.includes("for") || tagLower.includes("tips") || tagLower.includes("guide")) {
     return "long-tail";
   }
 
-  if (tag.volume === "high" && tagLower.length < 10) {
+  if ((tag.volume === "very-high" || tag.volume === "high") && tagLower.length < 10) {
+    // Trending viral tags get extra boost
+    if (tag.trend7 && tag.trend7 > 80) return "viral";
     return "viral";
   }
 
@@ -115,9 +133,9 @@ function filterTagsByPlatform(
     .filter((t) => t.platform.includes(platform) || t.platform.includes("all") || t.platform.includes("instagram"))
     .map((t) => ({
       ...t,
-      score: calculateQualityScore(t, platform),
+      score: calculateQualityScore(t, platform, keyword),
       category: classifyTag(t, keyword),
-      competition: t.volume === "high" ? "high" : t.volume === "medium" ? "medium" : "low",
+      competition: t.volume === "very-high" || t.volume === "high" ? "high" : t.volume === "medium" ? "medium" : "low",
       language: t.language || inferTagLanguage(t.tag),
     }));
 

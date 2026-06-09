@@ -14,8 +14,10 @@ export interface Hashtag {
   category: TagCategory;
   competition: CompetitionLevel;
   platform: Platform[];
-  volume: "high" | "medium" | "low";
+  volume: "very-high" | "high" | "medium" | "low";
   language?: HashtagLanguage;
+  trend7?: number; // trend score for last 7 days (1-100)
+  trend30?: number; // trend score for last 30 days (1-100)
 }
 
 export interface HashtagGroup {
