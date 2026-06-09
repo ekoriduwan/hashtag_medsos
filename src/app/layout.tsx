@@ -17,6 +17,9 @@ export const metadata: Metadata = {
   title: "Hashtag Finder Pro - Temukan Hashtag Terbaik untuk Kontenmu",
   description:
     "Generate hashtag yang relevan dan terbukti efektif untuk YouTube, TikTok, dan Instagram. Tingkatkan discoverability kontenmu sekarang!",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({
